@@ -3,6 +3,8 @@ import time
 from emailing import send_email
 import os
 import glob
+from threading import Thread
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -14,10 +16,7 @@ first_frame = None
 status_list = []
 count = 1
 
-def clean_images():
-    all_images = glob.glob(f"{SCRIPT_DIR}/images/*.jpg")
-    for image in all_images:
-        os.remove(image)
+
 
 while True:
     status = 0
@@ -62,8 +61,12 @@ while True:
     
     if status_list[0] == 1 and status_list[1] == 0:
         print("Movement detected!")
-        send_email(image_with_object)
-        clean_images()
+        email_thread = Thread(target=send_email, args=(image_with_object,))
+        email_thread.daemon = True
+        email_thread.start()
+
+        
+
         first_frame = None
         status_list = []
         count = 1
@@ -76,5 +79,6 @@ while True:
         break
 
 video_capture.release()
+
 
 

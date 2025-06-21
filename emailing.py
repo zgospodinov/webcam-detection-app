@@ -4,7 +4,14 @@ import smtplib
 from email.message import EmailMessage
 import ssl
 import imghdr
+import glob
+import os
 
+def clean_images():
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    all_images = glob.glob(f"{SCRIPT_DIR}/images/*.jpg")
+    for image in all_images:
+        os.remove(image)
 
 def send_email(image_with_object):
     load_dotenv()
@@ -36,3 +43,9 @@ def send_email(image_with_object):
     with smtplib.SMTP_SSL(host, port, context=context) as server:
         server.login(user_name, password)
         server.send_message(msg)
+
+        clean_images()
+
+
+if __name__ == "__main__":
+    clean_images()
