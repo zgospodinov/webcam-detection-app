@@ -1,7 +1,10 @@
 import cv2
 import time
 from emailing import send_email
+import os
+import glob
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 video_capture = cv2.VideoCapture(0)
 time.sleep(1)
@@ -9,16 +12,25 @@ time.sleep(1)
 
 first_frame = None
 status_list = []
+count = 1
+
+def clean_images():
+    all_images = glob.glob(f"{SCRIPT_DIR}/images/*.jpg")
+    for image in all_images:
+        os.remove(image)
 
 while True:
     status = 0
     check, frame = video_capture.read()
+    
+
     if not check:
         print("Failed to capture image")
         break
 
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray_frame_gaussian = cv2.GaussianBlur(gray_frame, (21, 21), 0)
+    
     
     if first_frame is None:
         first_frame = gray_frame_gaussian
@@ -37,13 +49,24 @@ while True:
 
         if rectangle.any():
             status = 1
-    
+            cv2.imwrite(f"{SCRIPT_DIR}/images/frame_{count}.jpg", frame)
+            count += 1
+
+            all_images = glob.glob(f"{SCRIPT_DIR}/images/*.jpg")
+            image_index = int(len(all_images) / 2)
+            image_with_object = all_images[image_index] 
+        
+            
     status_list.append(status)
     status_list = status_list[-2:]
     
     if status_list[0] == 1 and status_list[1] == 0:
         print("Movement detected!")
-        send_email()
+        send_email(image_with_object)
+        clean_images()
+        first_frame = None
+        status_list = []
+        count = 1
 
     cv2.imshow("Webcam Feed", frame)
 
